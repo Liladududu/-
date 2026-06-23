@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <title>职业方向测评</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      background: #fff;
+      font-size: 18px;
+      -webkit-text-size-adjust: 100% !important;
+      text-size-adjust: 100% !important;
+    }
+    #shell {
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1rem 0.75rem 2rem;
+    }
+    #root {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      width: 100%;
+      max-width: 100%;
+      padding: 0 4px;
+    }
+    .opt-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 16px 18px;
+      border: 0.5px solid #e0e0e0;
+      border-radius: 12px;
+      background: #fff;
+      color: #111;
+      font-size: 17px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      line-height: 1.6;
+      transition: border-color 0.15s, background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .opt-btn:active { background: #EEEDFE; border-color: #7F77DD; }
+    .tag {
+      font-size: 13px;
+      background: #f5f5f5;
+      color: #555;
+      border: 0.5px solid #ddd;
+      padding: 4px 12px;
+      border-radius: 99px;
+    }
+    .primary-btn {
+      display: block;
+      width: 100%;
+      padding: 17px;
+      background: #534AB7;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      cursor: pointer;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .secondary-btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      background: #f5f5f5;
+      color: #111;
+      border: 0.5px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card {
+      border: 0.5px solid #ddd;
+      border-radius: 14px;
+      padding: 1.5rem;
+      background: #fff;
+      margin-bottom: 12px;
+    }
+    .badge {
+      display: inline-block;
+      background: #EEEDFE;
+      color: #534AB7;
+      font-size: 14px;
+      padding: 4px 12px;
+      border-radius: 8px;
+    }
+    .info-box {
+      background: #f5f5f5;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .dir-tag {
+      background: #f5f5f5;
+      color: #111;
+      font-size: 14px;
+      padding: 5px 13px;
+      border-radius: 99px;
+      border: 0.5px solid #ddd;
+      display: inline-block;
+      margin-bottom: 6px;
+    }
+    .progress-track {
+      height: 4px;
+      background: #ddd;
+      border-radius: 2px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    .cover-icon {
+      font-size: 56px;
+      margin-bottom: 1rem;
+    }
+    .cover-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 0.75rem;
+    }
+    .cover-desc {
+      font-size: 15px;
+      color: #555;
+      line-height: 1.9;
+      margin-bottom: 1.5rem;
+    }
+    .progress-label {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+    }
+    .question-text {
+      font-size: 18px;
+      font-weight: 500;
+      color: #111;
+      margin-bottom: 1.25rem;
+      line-height: 1.6;
+    }
+    .sub-text {
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 1.1rem;
+    }
+    .result-name {
+      font-size: 25px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 8px;
+    }
+    .result-desc {
+      font-size: 15px;
+      color: #555;
+      line-height: 1.85;
+      margin-bottom: 1.5rem;
+    }
+    .result-suggestion {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 8px;
+    }
+    .result-suggestion-text {
+      font-size: 15px;
+      color: #111;
+      line-height: 1.8;
+    }
+    .result-dir-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 10px;
+    }
+    .result-footer {
+      border-top: 0.5px solid #ddd;
+      padding-top: 1rem;
+      font-size: 14px;
+      color: #999;
+      line-height: 1.8;
+    }
+    .tag-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 1.75rem;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .mt-1 { margin-top: 0.5rem; }
+    .mb-1 { margin-bottom: 0.5rem; }
+    .mb-2 { margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+<div id="shell"><div id="root"></div></div>
+
+<script>
+let profile = {major:null, status:null, pathFeel:null};
+let scores = {I:0,S:0,A:0,E:0,R:0,C:0};
+let s2queue = [], s2idx = 0, s1idx = 0, phase = 'cover';
+
+const STAGE1 = [
+  {id:'major', q:'你目前的专业或工作背景是哪个方向？', sub:'选最接近的那个就好',
+    opts:[{t:'理工科（数学、物理、计算机、工程等）',v:'stem'},{t:'商科（经济、金融、管理、市场等）',v:'biz'},{t:'文科/社科（中文、历史、哲学、社会学等）',v:'hum'},{t:'艺术/设计/传媒',v:'art'},{t:'医学/生命科学/心理学',v:'med'},{t:'法学/政治学/国际关系',v:'law'}]},
+  {id:'status', q:'你现在是什么状态？',
+    opts:[{t:'在读大学生，还没工作过',v:'student'},{t:'应届/刚毕业，在找工作或刚入职',v:'fresh'},{t:'工作1–3年，开始想清楚方向',v:'early'},{t:'工作3年以上，考虑转型或深耕',v:'mid'}]},
+  {id:'pathFeel', q:'你对自己目前的专业或职业路径，真实的感受是？', sub:'选一个最接近你内心的',
+    opts:[{t:'挺认同的，我愿意沿着这条路走下去',v:'yes'},{t:'还行，但感觉不够有劲，不知道缺什么',v:'meh'},{t:'不太认同，但不知道能去哪儿',v:'lost'},{t:'明确感觉不适合，很想换方向',v:'no'}]}
+];
+
+const UNIVERSAL = [
+  {q:'你做过最有成就感的一件事，是哪种类型的？',opts:[{t:'彻底搞懂了一件很复杂的事，终于想清楚了',d:'I'},{t:'帮某个人解决了一个他搞不定的真实问题',d:'S'},{t:'做了一个东西，被别人说"好看"或"有创意"',d:'A'},{t:'把一件乱糟糟的事情整理得井井有条',d:'C'}]},
+  {q:'朋友跟你倾诉烦恼，你的第一反应通常是？',opts:[{t:'帮他分析：问题出在哪、有几种解法',d:'I'},{t:'先共情陪着说，让他觉得被理解再说别的',d:'S'},{t:'直接帮他想下一步怎么行动，安慰没用',d:'E'},{t:'帮他把事情梳理清楚，理清了才好解决',d:'C'}]},
+  {q:'你对什么类型的内容完全停不下来？',opts:[{t:'纪录片、科普、深度分析文章',d:'I'},{t:'真人故事、人物访谈、情感向内容',d:'S'},{t:'设计、摄影、穿搭、创意视频',d:'A'},{t:'商业案例、效率工具、方法论',d:'E'}]},
+  {q:'你最受不了哪种状态？',opts:[{t:'一直和很多人打交道，没有独处思考的时间',d:'I'},{t:'一个人闷头干，不知道别人怎么看、有没有用',d:'S'},{t:'每天做一模一样的事，没有任何新鲜感',d:'A'},{t:'什么都不确定，没有目标也没有计划',d:'C'}]},
+  {q:'连续放假一周，到了第五天你通常会？',opts:[{t:'开始无聊，想做点有意义或有挑战的事',d:'I'},{t:'还在享受，但开始想念某些人、想出去社交',d:'S'},{t:'沉浸在某个创作或爱好里，完全忘了时间',d:'A'},{t:'有点焦虑，开始想把接下来的计划安排好',d:'C'}]},
+  {q:'如果一件事做完了，什么情况会让你觉得"这次真的值"？',opts:[{t:'我真正理解了一件之前不懂的事',d:'I'},{t:'有人因为这件事明显变好了，对我说了声谢谢',d:'S'},{t:'最终呈现出来的东西让我自己也觉得好看',d:'A'},{t:'结果非常准确，没有任何纰漏，顺利交付',d:'C'}]}
+];
+
+const TARGETED = {
+  stem_yes:[{q:'你选择留在理工方向，最核心的原因是？',opts:[{t:'我真的对技术本身感兴趣，愿意一直深挖下去',d:'I'},{t:'这条路比较稳，收入和晋升都看得见',d:'C'},{t:'我想用技术去影响更多人，做出有用的产品',d:'E'},{t:'技术可以和其他东西结合，空间很大',d:'A'}]},{q:'在理工方向里，你更想往哪条路走？',opts:[{t:'技术专家路线——某个领域的问题我来解决',d:'I'},{t:'产品或管理路线——技术是工具，影响力才是目标',d:'E'},{t:'数据或分析路线——用数字帮人做更好的决策',d:'C'},{t:'技术+创意的交叉路线，比如设计工程或科技传播',d:'A'}]},{q:'你在技术类课程或工作里，什么时候最来劲？',opts:[{t:'碰到一个真正难的问题，要我深入想',d:'I'},{t:'做出来的东西被真实用户用上了',d:'R'},{t:'带着别人一起解决问题，推着事情向前',d:'E'},{t:'把复杂的逻辑梳理得非常清楚、无懈可击',d:'C'}]}],
+  stem_meh:[{q:'你学理工但感觉缺点什么——最可能缺的是哪个？',opts:[{t:'缺少和人真正互动的机会，太孤立了',d:'S'},{t:'缺少创意和表达的空间，全是规范和逻辑',d:'A'},{t:'缺少更大的目标感，不知道做这些有什么意义',d:'E'},{t:'缺少看到真实成果的感觉，太抽象了',d:'R'}]},{q:'如果在理工背景上"加一个维度"，你最想加什么？',opts:[{t:'加设计思维——让技术更好看、更好用',d:'A'},{t:'加商业视角——让技术转化成真正的价值',d:'E'},{t:'加社科视角——理解技术背后的人和社会',d:'S'},{t:'加研究深度——在某个领域做到真正极致',d:'I'}]},{q:'理工背景里有不少"偏人"的岗位，比如产品、用研、技术销售。你对这些感兴趣吗？',opts:[{t:'很感兴趣，我其实更想做和人打交道的事',d:'S'},{t:'有点兴趣，但还是想保留技术底色',d:'E'},{t:'不太感兴趣，我更想在技术本身上做深',d:'I'},{t:'没想过，但听起来值得了解一下',d:'C'}]}],
+  stem_lost:[{q:'你学理工但感觉不认同，最根本的原因是？',opts:[{t:'对技术本身没兴趣，硬学很痛苦',d:'S'},{t:'太孤立，缺少和人真正连接的感觉',d:'S'},{t:'没有创意空间，全是逻辑和规范',d:'A'},{t:'感觉做的东西离真实世界太远',d:'R'}]},{q:'理工背景在转型时有一个优势：很多领域愿意要"有技术底子的人"。你更愿意往哪个方向试？',opts:[{t:'教育/科普——把复杂的东西讲清楚给别人听',d:'S'},{t:'设计/产品——把技术和美感结合起来',d:'A'},{t:'商业/运营——用理性思维做市场和增长',d:'E'},{t:'写作/内容——做有深度的科技媒体或分析',d:'I'}]},{q:'如果不考虑"学了这么多年理工浪费了"，你最想做的事是什么类型？',opts:[{t:'做一件有温度的事，直接帮到具体的人',d:'S'},{t:'做出一个有自己风格的作品',d:'A'},{t:'把一个想法真正推动落地，看到它运转',d:'E'},{t:'深入研究一个我真正好奇的领域',d:'I'}]}],
+  stem_no:[{q:'你明确不想继续理工方向。你对这个决定最大的顾虑是？',opts:[{t:'学了这么多年是不是浪费了',d:'C'},{t:'不知道转出去能做什么、会不会更糟',d:'I'},{t:'别人会不会觉得我不稳定、在逃避',d:'S'},{t:'经济压力，转型有成本和风险',d:'R'}]},{q:'理工背景其实是一张很好用的底牌，很多新方向都欢迎你。你最想去哪个领域试试？',opts:[{t:'教育/培训——把我懂的东西教给别人',d:'S'},{t:'设计/创意——做有美感、有创意的事',d:'A'},{t:'商业/创业——把技术能力用在更大的目标上',d:'E'},{t:'写作/媒体——做深度内容或科技评论',d:'I'}]}],
+  biz_yes:[{q:'商科很宽，你更偏向哪一侧？',opts:[{t:'数字和分析那侧：财务、数据、投资、战略',d:'C'},{t:'人和沟通那侧：销售、市场、品牌、公关',d:'S'},{t:'推动和创造那侧：运营、BD、创业、增长',d:'E'},{t:'研究和洞察那侧：咨询、用研、行业分析',d:'I'}]},{q:'你在商科类课程或工作里，什么情况下最有感觉？',opts:[{t:'分析一个商业案例，把逻辑全部理清楚',d:'I'},{t:'做一个提案或演讲，把人说服了',d:'E'},{t:'策划一个活动或项目，从无到有落地了',d:'R'},{t:'数字和模型都对了，非常精准',d:'C'}]},{q:'五年后你希望自己在哪种位置？',opts:[{t:'某个细分领域的专业分析师或顾问',d:'I'},{t:'带团队的管理者，负责一块业务',d:'E'},{t:'在一家自己认可的公司做核心运营',d:'R'},{t:'还没想好，走一步看一步',d:'C'}]}],
+  biz_meh:[{q:'你学商科但感觉不够有劲，最可能是因为？',opts:[{t:'感觉学的东西太虚，离实际太远',d:'R'},{t:'缺少真正有挑战性的问题让我深入钻研',d:'I'},{t:'没有创意空间，全是流程和规范',d:'A'},{t:'缺少真实影响力，感觉做的东西没什么意义',d:'E'}]},{q:'商科里有很多细分方向，哪个听起来最让你想深入了解？',opts:[{t:'咨询或战略——帮企业解决真正复杂的问题',d:'I'},{t:'品牌或创意营销——让商业更有美感和故事',d:'A'},{t:'创业或增长——自己推动一件事从零到一',d:'E'},{t:'投资或分析——用数字判断未来的方向',d:'C'}]}],
+  biz_lost:[{q:'你学商科但感觉不认同，最根本的原因是？',opts:[{t:'对"商业"这件事本身兴趣不大，感觉很功利',d:'S'},{t:'想做更有创意的事，商科太理性了',d:'A'},{t:'想做更有深度的研究，商科太浅了',d:'I'},{t:'想做更有实感的事，太多东西停留在PPT层面',d:'R'}]},{q:'如果不考虑"学了商科怎么办"，你更想做哪类事？',opts:[{t:'直接帮助到具体的人，有真实的人情连接',d:'S'},{t:'做有个人风格的创作，留下一些东西',d:'A'},{t:'在某个我真正感兴趣的领域深入研究',d:'I'},{t:'推动一件真正有社会意义的事发生',d:'E'}]}],
+  biz_no:[{q:'你明确想离开商科方向，最想去试试的是？',opts:[{t:'设计/创意——做有审美的东西',d:'A'},{t:'教育/心理——帮助人成长',d:'S'},{t:'技术/产品——做有实感的东西',d:'R'},{t:'写作/研究——深入一个我真正好奇的领域',d:'I'}]},{q:'商科背景给了你理解商业逻辑的能力。你觉得这个能力在新方向里有用吗？',opts:[{t:'有用，我想找一个能把它用上的新方向',d:'E'},{t:'可能有用，但我更想先找自己真正感兴趣的',d:'I'},{t:'不太想继续和商业相关，想做完全不同的事',d:'A'},{t:'不确定，还没想清楚',d:'C'}]}],
+  hum_yes:[{q:'你认同文科方向，你觉得自己最强的能力是？',opts:[{t:'写作和表达——我能把复杂的东西说清楚',d:'A'},{t:'理解人和社会——我对人的行为和关系很敏感',d:'S'},{t:'批判性思维——我能看到别人忽略的角度',d:'I'},{t:'研究和梳理——我能把大量信息整理成清晰的结论',d:'C'}]},{q:'文科出身有很多路，你更认同哪个方向？',opts:[{t:'内容/媒体/编辑——用文字影响人',d:'A'},{t:'教育/咨询/公益——直接帮助人成长',d:'S'},{t:'研究/政策/学术——往深度和专业走',d:'I'},{t:'品牌/公关/运营——把文科思维用在商业里',d:'E'}]},{q:'文科背景经常被质疑"能做什么"。你自己怎么看这件事？',opts:[{t:'我不太在意，我知道自己的价值在哪里',d:'E'},{t:'有时候会焦虑，但我相信找到对的方向就好了',d:'I'},{t:'确实让我困扰，所以我想搞清楚自己的方向',d:'C'},{t:'我在积极地用行动证明，比如做作品或项目',d:'A'}]}],
+  hum_meh:[{q:'你学文科但感觉缺点什么劲，最可能是因为？',opts:[{t:'感觉出路不清晰，不知道读完能做什么',d:'C'},{t:'周围人都去考公或考研，我不确定这是不是我想要的',d:'I'},{t:'想做更有创意或表达性的工作，但不知道怎么起步',d:'A'},{t:'想要更直接的影响力，感觉文科太"间接"了',d:'E'}]},{q:'如果可以在文科基础上加一个新技能，你最想加哪个？',opts:[{t:'数据分析或用研——让我的判断更有说服力',d:'I'},{t:'设计或视觉表达——让我的内容更有传播力',d:'A'},{t:'运营或商业思维——让我能推动事情真正落地',d:'E'},{t:'心理学或咨询技能——更深入地理解和帮助人',d:'S'}]},{q:'文科里其实有一些不太被提到的好出路，比如用户研究、内容策略、政策咨询。听到这些，你的反应是？',opts:[{t:'用户研究我感兴趣，想深入了解',d:'S'},{t:'内容策略我感兴趣，感觉和我的能力很搭',d:'A'},{t:'政策咨询我感兴趣，想有更大的影响力',d:'E'},{t:'这些我都没了解过，说明我还需要多探索',d:'I'}]}],
+  hum_lost:[{q:'你学文科但感觉不认同，最根本的原因是？',opts:[{t:'对人文内容本身兴趣不大，是被动选择的',d:'R'},{t:'太理论了，离真实世界太远',d:'E'},{t:'感觉没有硬技能，心里没底',d:'C'},{t:'我其实喜欢这些内容，但不知道怎么变成职业',d:'I'}]},{q:'你最不想过的职业生活是哪种？',opts:[{t:'坐在格子间里处理重复的文件和流程',d:'A'},{t:'一个人面对电脑，几乎不和人交流',d:'S'},{t:'做执行，永远等别人告诉我做什么',d:'E'},{t:'做很虚的事，看不到实际的结果和影响',d:'R'}]},{q:'如果你能从零开始选一个领域深耕，最吸引你的是？',opts:[{t:'心理学或社会工作方向',d:'S'},{t:'创意写作或内容创作方向',d:'A'},{t:'教育或培训方向',d:'S'},{t:'商业分析或用研方向',d:'I'}]}],
+  hum_no:[{q:'你明确想离开文科路径。你觉得文科给你留下的最有价值的东西是什么？',opts:[{t:'写作和表达能力——在任何地方都用得上',d:'A'},{t:'对人的敏感度——能感知别人的需求和情绪',d:'S'},{t:'批判性思维——能看到问题的多个层面',d:'I'},{t:'说实话，我还没找到——这也是我想转的原因',d:'C'}]},{q:'你想转到一个有更强技术感或更清晰路径的方向。你愿意付出多大代价？',opts:[{t:'愿意花时间重新学，哪怕从零开始',d:'R'},{t:'希望能有一个过渡，不要断层太大',d:'C'},{t:'想先找一个能用上现有能力的交叉点',d:'I'},{t:'还没想那么细，先找方向再说',d:'E'}]}],
+  art_yes:[{q:'你认同艺术/设计方向，你觉得自己最有把握的是？',opts:[{t:'视觉审美——我对好看/不好看有很强的判断力',d:'A'},{t:'创意构思——我能想出别人想不到的点子',d:'A'},{t:'沟通和表达——我能把创意清楚地传达给别人',d:'S'},{t:'执行和落地——我能把想法做成真实的东西',d:'R'}]},{q:'纯创作 vs 商业应用，你更偏哪边？',opts:[{t:'纯创作——我想做有个人风格的东西，商业是附带的',d:'A'},{t:'商业应用——我愿意把创意用在解决实际问题上',d:'R'},{t:'两者结合——创意加商业逻辑，比如品牌或体验设计',d:'E'},{t:'还在探索，都有兴趣但还没定',d:'I'}]},{q:'你在创作或设计时，最大的驱动力是什么？',opts:[{t:'想做出让我自己也觉得好看的东西',d:'A'},{t:'想让用户或观众真正受到触动',d:'S'},{t:'想探索一个概念或想法的边界',d:'I'},{t:'想解决一个真实的问题，设计是手段',d:'R'}]}],
+  art_meh:[{q:'你在艺术/设计方向但感觉缺点劲，最可能是因为？',opts:[{t:'感觉创作空间被限制，太多甲方或规范',d:'A'},{t:'缺少商业认可，不知道能不能养活自己',d:'C'},{t:'缺少更深的思想性，想做有内涵的东西',d:'I'},{t:'缺少和人真正互动的感觉，太孤独了',d:'S'}]},{q:'艺术/设计里有一些更有影响力的方向，比如用户体验、品牌策略、创意总监。你对这些感兴趣吗？',opts:[{t:'很感兴趣UX，想把设计和用户研究结合',d:'S'},{t:'很感兴趣品牌，想让创意影响更多人',d:'E'},{t:'想往创意总监走，但不知道路径',d:'I'},{t:'我更想先做好手上的事，不急着想那么远',d:'R'}]}],
+  art_lost:[{q:'你在艺术/设计方向但感觉不认同，最根本的原因是？',opts:[{t:'不是我主动选的，被家人或环境推进来的',d:'E'},{t:'对这个领域的内容本身越来越没感觉',d:'I'},{t:'感觉出路太窄或太不稳定',d:'C'},{t:'想做更直接帮助人的事，设计太间接了',d:'S'}]},{q:'你的创意背景是一个很有用的资产。你觉得它在新方向里能用上吗？',opts:[{t:'能用，我想找一个既有创意又有影响力的方向',d:'E'},{t:'能用，比如教育或内容方向也需要表达能力',d:'S'},{t:'能用，商业里很需要有审美感的人',d:'R'},{t:'不确定，我想先找到我真正感兴趣的领域再说',d:'I'}]}],
+  art_no:[{q:'你明确想离开艺术/设计路径。你最想去的方向是？',opts:[{t:'商业/运营——做有结果感的事',d:'E'},{t:'教育/咨询——直接帮助人成长',d:'S'},{t:'研究/分析——深入理解一个领域',d:'I'},{t:'技术/产品——把想法做成真实可用的东西',d:'R'}]}],
+  med_yes:[{q:'你认同医学/心理/生科方向，你更认同哪种价值感？',opts:[{t:'直接帮助到具体的人，看到他们变好',d:'S'},{t:'做研究，在科学层面推进某个问题',d:'I'},{t:'推动系统或政策改变，影响更多人',d:'E'},{t:'把专业知识转化成科普或教育内容',d:'A'}]},{q:'医学/心理方向里，你对哪条路最有感觉？',opts:[{t:'临床路线——和真实的病人或来访者打交道',d:'S'},{t:'研究路线——实验室或学术研究',d:'I'},{t:'健康科技路线——把医学和产品结合',d:'E'},{t:'科普/教育路线——让更多人理解健康知识',d:'A'}]}],
+  med_meh:[{q:'你在医学/心理方向但感觉缺点什么，最可能是？',opts:[{t:'感觉路太窄，只有几条固定路可以走',d:'E'},{t:'太多死记硬背，缺少真正思考和创造的空间',d:'I'},{t:'压力太大、节奏太重，和我想要的生活不匹配',d:'A'},{t:'想更直接地帮到人，但现在的工作离人太远',d:'S'}]},{q:'医学/心理背景在很多新领域很受欢迎，比如健康科技、用户研究、医学写作。你对哪个最感兴趣？',opts:[{t:'健康科技/数字疗法——把医学做成产品',d:'E'},{t:'用户研究——用心理学理解人的行为',d:'S'},{t:'医学写作/科普——让专业知识变得更易懂',d:'A'},{t:'医疗数据分析——用数字推动医疗决策',d:'I'}]}],
+  med_lost:[{q:'你在医学/心理方向但感觉不认同，最根本的原因是？',opts:[{t:'当初是被家人推进来的，不是自己选的',d:'E'},{t:'对这个领域本身越来越没有热情',d:'I'},{t:'承受不了这个行业的压力和代价',d:'C'},{t:'想做更有创意或商业感的工作',d:'A'}]},{q:'医学/心理背景是非常稀缺的资产，很多行业都想要。你最愿意把它用在哪里？',opts:[{t:'大健康行业（健康APP、医疗器械、保险等）',d:'E'},{t:'教育或培训（心理健康教育、医学培训）',d:'S'},{t:'内容或媒体（健康科普、医疗写作）',d:'A'},{t:'研究机构或咨询（医疗政策、卫生经济）',d:'I'}]}],
+  med_no:[{q:'你明确想离开医学/心理路径。你最大的顾虑是？',opts:[{t:'学了这么多年，感觉放弃太可惜',d:'C'},{t:'父母或周围人的压力和看法',d:'S'},{t:'不知道自己在其他地方有什么竞争力',d:'I'},{t:'经济方面——怕换了收入反而更低',d:'R'}]},{q:'你最想去的新方向是？',opts:[{t:'商业/运营/市场',d:'E'},{t:'设计/创意/内容',d:'A'},{t:'技术/产品/数据',d:'I'},{t:'教育/公益/社会工作',d:'S'}]}],
+  law_yes:[{q:'你认同法学/政治方向，更有感觉的工作方式是？',opts:[{t:'做具体的案子——解决当事人的真实问题',d:'R'},{t:'研究制度和规则——理解底层逻辑',d:'I'},{t:'影响政策或公共议题——推动更大的改变',d:'E'},{t:'通过写作或倡导——让更多人理解某个问题',d:'A'}]},{q:'法学/政治里，你对哪个方向更有长期兴趣？',opts:[{t:'诉讼或法律服务——传统律师路线',d:'R'},{t:'合规或法务——在企业里做法律风控',d:'C'},{t:'公共政策或政府——推动制度改变',d:'E'},{t:'法律研究或学术——往深处理解规则',d:'I'}]}],
+  law_meh:[{q:'你在法学/政治方向但感觉缺点什么，最可能是？',opts:[{t:'想有更大的影响力，感觉现在做的太局部了',d:'E'},{t:'太多文书和程序，缺少真正思考的空间',d:'I'},{t:'和人互动太少，缺少真实连接',d:'S'},{t:'想做更有创意的事，太规范了',d:'A'}]},{q:'法律/政治背景在很多新领域很有用，比如合规科技、政策咨询、公益法律。你对哪个最感兴趣？',opts:[{t:'合规科技（RegTech）——法律加技术',d:'I'},{t:'政策咨询——影响更大范围的决策',d:'E'},{t:'公益法律——用法律帮助弱势群体',d:'S'},{t:'法律内容/科普——让普通人理解法律',d:'A'}]}],
+  law_lost:[{q:'你在法学/政治方向但感觉不认同，最根本的原因是？',opts:[{t:'对这个领域本身没什么热情，当初是调剂或家人决定的',d:'E'},{t:'太规范、太保守，缺少创新空间',d:'A'},{t:'出路太单一，感觉路被固定死了',d:'C'},{t:'想做更有人情味的工作，法律太冷了',d:'S'}]},{q:'法学背景让你有很强的逻辑和规则感。你觉得这能在哪个新方向上用上？',opts:[{t:'商业/咨询——用逻辑能力帮企业做决策',d:'E'},{t:'内容/写作——做有深度的分析类内容',d:'A'},{t:'教育/培训——把复杂的东西讲清楚给别人',d:'S'},{t:'技术/产品——理解规则在产品设计里很有用',d:'I'}]}],
+  law_no:[{q:'你明确想离开法学/政治路径，最想去试试的是？',opts:[{t:'商业/运营/BD——做有结果感的事',d:'E'},{t:'内容/媒体/写作——表达和传播',d:'A'},{t:'教育/公益——直接帮助人',d:'S'},{t:'技术/产品/数据——做有实感的东西',d:'I'}]}],
+  student_any:[{q:'你还在读书，有没有做过实习或课外项目？那次经历给你最大的感受是？',opts:[{t:'我发现自己喜欢深入钻研某个问题',d:'I'},{t:'我发现自己在和人打交道时最来劲',d:'S'},{t:'我发现自己特别享受创作和呈现的过程',d:'A'},{t:'我发现自己喜欢推动事情落地、看到结果',d:'E'}]}],
+  mid_any:[{q:'你已经工作3年以上了，回头看你做得最好的事，是哪类？',opts:[{t:'分析和研究类——我在这上面比别人做得更深',d:'I'},{t:'沟通和关系类——我维护了很多重要的人际关系',d:'S'},{t:'创意和表达类——我做的东西比别人有品质',d:'A'},{t:'推进和管理类——我让事情真正发生了',d:'E'}]}]
+};
+
+function buildQueue() {
+  const mj=profile.major, pf=profile.pathFeel, st=profile.status;
+  const q=[...UNIVERSAL];
+  const key=mj+'_'+pf;
+  if(TARGETED[key]) q.push(...TARGETED[key].slice(0,3));
+  if(st==='student'&&TARGETED['student_any']) q.push(...TARGETED['student_any']);
+  if(st==='mid'&&TARGETED['mid_any']) q.push(...TARGETED['mid_any']);
+  for(let i=UNIVERSAL.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]];}
+  s2queue=q.slice(0,10);
+}
+
+function addScore(d){if(scores[d]!==undefined)scores[d]++;}
+function getTop(){return Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];}
+
+const RESULTS={
+  I:{name:'深度思考型',core:'你的核心竞争力：把复杂的事情想清楚',desc:'你有强烈的"搞懂"驱动力，比别人更能在混乱信息里找到规律，也更愿意花时间真正理解一件事。这在信息爆炸的时代是稀缺的能力。',
+    dirs:(p)=>{const b=['数据分析师','产品经理','研究员/分析师','咨询顾问','内容策略'];if(p.major==='stem')return['算法/机器学习工程师','数据科学家','技术产品经理','量化研究员',...b];if(p.major==='hum')return['用户研究员','内容策略','编辑/出版','政策研究','教育产品',...b];if(p.major==='biz')return['战略咨询','金融分析','市场研究','精算','投资研究',...b];if(p.major==='law')return['法律研究','合规分析','政策咨询','法务',...b];if(p.major==='med')return['临床研究','医学写作','健康科技产品','卫生政策',...b];if(p.major==='art')return['用户体验研究','创意策略','内容规划',...b];return b;},
+    next:(p)=>{if(p.pathFeel==='yes')return'你认同现有方向，建议找到其中最需要深度思考的那个分支——往专家或研究方向走，不要只做执行。';if(p.pathFeel==='meh')return'你现在的路感觉缺点什么，很可能是缺乏真正有深度的问题。往分析、研究、策略类岗位靠，会让你更有劲。';if(p.pathFeel==='lost')return'你不认同现在的路，但你的思维方式本身是很强的资产。数据、产品、咨询方向对背景要求相对宽泛，且非常需要你这类人。';return'你想换方向。建议先找一个你真正好奇的领域，从研究它开始——深度理解本身就是你进入新领域最有力的方式。';}},
+  S:{name:'共情连接型',core:'你的核心竞争力：让人感到被理解',desc:'你对人有天然的敏感度，能感知情绪、建立信任。这在任何需要"和人打交道"的工作里都是顶级资产——很多人有技术但缺这个，而你天生就有。',
+    dirs:(p)=>{const b=['HR/招聘','培训师','用户研究员','客户成功','公关/品牌运营'];if(p.major==='med')return['心理咨询方向','医患沟通','健康教育','社会工作',...b];if(p.major==='hum')return['教育/培训','社区运营','内容运营','公益/社会工作',...b];if(p.major==='law')return['法律援助','公益法律','劳动关系','HR合规',...b];if(p.major==='biz')return['销售/客户成功','品牌公关','人力资源',...b];if(p.major==='stem')return['技术培训师','用户研究员','客户成功经理',...b];return b;},
+    next:(p)=>{if(p.pathFeel==='yes')return'你认同现在的方向，找到其中最需要深度人际互动的分支——你的价值在于真实的连接。';if(p.pathFeel==='meh')return'你感觉缺点什么，很可能是当前工作太孤立。往更靠近用户、客户、学员的岗位移动会让你更有感觉。';return'你想换方向。教育、咨询、HR、用户研究这些方向对你天生友好，且对专业背景的要求相对宽松。';}},
+  A:{name:'创意表达型',core:'你的核心竞争力：让事情变得更好看、更有意思',desc:'你有审美直觉和表达欲，不满足于平庸的呈现方式。这不只是"会设计"，而是一种看待事物的方式——让你在很多领域都能做出不一样的东西。',
+    dirs:(p)=>{const b=['UI/UX设计师','品牌设计','内容创作者','文案策划','视频/摄影'];if(p.major==='art')return['交互设计','视觉设计','创意导演','插画/动态设计',...b];if(p.major==='hum')return['内容策划','品牌文案','编辑/出版','创意写作',...b];if(p.major==='stem')return['产品设计','数据可视化','科技媒体内容',...b];if(p.major==='biz')return['品牌策划','市场创意','商业内容运营',...b];if(p.major==='med')return['医学科普','健康内容创作','医疗品牌设计',...b];return b;},
+    next:(p)=>{if(p.pathFeel==='yes')return'你认同现在的路，同时积累个人作品集——那是你最有说服力的简历，也是你走得更深的底气。';if(p.pathFeel==='meh')return'你感觉缺点什么，很可能是缺少真正的创意空间。往设计、内容、品牌方向侧移，找到让你能"做出有自己风格的东西"的位置。';return'你想换方向。创意类岗位是少数"作品比学历更重要"的领域——从副业或个人项目开始积累作品，是最快的入场方式。';}},
+  E:{name:'目标驱动型',core:'你的核心竞争力：推动事情发生',desc:'你有行动力和目标感，在有挑战、需要决策的环境里最有劲。你的价值不是执行，而是判断方向、带动资源往前走——这是很多团队最缺的东西。',
+    dirs:(p)=>{const b=['商务拓展/BD','市场运营','项目管理','产品增长','创业方向'];if(p.major==='biz')return['战略规划','投融资分析','运营负责人','市场总监方向',...b];if(p.major==='stem')return['技术创业','技术产品经理','增长产品','技术BD',...b];if(p.major==='law')return['法务商务','政策倡导','公共事务','合规管理',...b];if(p.major==='hum')return['教育创业','内容运营负责人','公益项目管理',...b];if(p.major==='art')return['创意总监方向','品牌负责人','内容创业',...b];return b;},
+    next:(p)=>{if(p.pathFeel==='yes')return'你认同现在的方向，主动争取更多推动项目和做决策的机会——你的价值在于带动事情向前走，要让这一点对别人可见。';if(p.pathFeel==='meh')return'你感觉缺劲，很可能是因为现在的岗位太被动。往运营、BD、产品方向移动，找到一个让你能"推动事情发生"的位置。';return'你想换方向。运营、商务、创业类岗位是最能让你有感觉的选择，对背景要求相对宽泛，很多人靠项目经验和结果说话。';}},
+  C:{name:'系统规划型',core:'你的核心竞争力：把混乱变成秩序',desc:'你天生喜欢把事情理清楚、做对、做稳。对细节和流程的掌控力，在很多人眼里不起眼，但往往是让一个团队真正运转起来的关键——而且这种能力很难培养。',
+    dirs:(p)=>{const b=['项目管理','运营','财务/审计','行政管理','供应链计划'];if(p.major==='biz')return['财务分析','审计','战略规划','精算','风险管理',...b];if(p.major==='stem')return['技术项目管理','质量管理','数据运营',...b];if(p.major==='law')return['合规管理','法务','政策分析','风险合规',...b];return b;},
+    next:(p)=>{if(p.pathFeel==='yes')return'你认同现在的路，往更需要系统性思维的岗位走——项目管理、战略规划、或某个领域的专业管理岗是你最能发挥的位置。';if(p.pathFeel==='meh')return'你感觉缺点什么，可能是缺少更大的结构感。在现有工作里主动承担"让事情更有条理"的角色，积累管理类经验。';return'你想换方向。你的系统性思维是跨行业通用的资产——项目管理、运营、合规在大多数行业都有需求，是稳健转型的选择。';}},
+  R:{name:'实操执行型',core:'你的核心竞争力：把事情真正做出来',desc:'你重视实际，享受动手的过程，不喜欢停留在想法层面。你的可靠和专注是很多团队最需要、也最难找的东西——关键是找到一个真正值得你投入的领域。',
+    dirs:(p)=>{const b=['工程师/开发','运维/测试','技术支持','质量管理','供应链'];if(p.major==='stem')return['软件工程','硬件工程','工业设计','嵌入式开发',...b];if(p.major==='med')return['医疗器械','实验室技术','临床协调','医疗运营',...b];if(p.major==='art')return['设计执行','视频制作','展览制作',...b];return b;},
+    next:(p)=>{if(p.pathFeel==='yes')return'你认同现在的路，深耕一个具体技能，让自己成为某件事"做得最好"的那个人——专注比广度更重要。';if(p.pathFeel==='meh')return'你感觉缺点什么，可能是缺少真实的产出感。找找工作里最能看到实际成果的那个部分，或者做一个真实的副业项目来找回感觉。';return'你想换方向。选一个你真正愿意动手做的领域，先从实操入手——做出来的东西比简历更有说服力。';}}
+};
+
+function render(){
+  const root=document.getElementById('root');
+  if(phase==='cover')root.innerHTML=renderCover();
+  else if(phase==='s1')root.innerHTML=renderS1();
+  else if(phase==='s2')root.innerHTML=renderS2();
+  else root.innerHTML=renderResult();
+  bindEvents();
+}
+
+function renderCover(){
+  return `<div style="text-align:center;padding:2.5rem 0 1rem;">
+    <div style="font-size:56px;margin-bottom:1rem;">🧭</div>
+    <div style="font-size:24px;font-weight:600;color:#111;margin-bottom:0.75rem;">职业方向测评</div>
+    <div style="font-size:15px;color:#555;line-height:1.9;margin-bottom:1.5rem;">不是给你贴一个人格标签<br>而是结合你的专业背景和真实感受<br><strong style="color:#111;">给你一个真正值得探索的方向</strong></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:1.75rem;">
+      ${['约5分钟','根据你的背景出题','不需要工作经验','给出具体方向'].map(t=>`<span class="tag">${t}</span>`).join('')}
+    </div>
+    <button class="primary-btn" id="startBtn">开始测评 →</button>
+  </div>`;
+}
+
+function renderS1(){
+  const item=STAGE1[s1idx];
+  const pct=Math.round((s1idx+1)/STAGE1.length*100);
+  return `<div style="padding-top:1rem;">
+    <div style="font-size:12px;color:#999;margin-bottom:8px;letter-spacing:0.5px;">第一部分 · 了解你的情况 · ${s1idx+1} / 3</div>
+    <div class="progress-track"><div style="height:4px;background:#9FE1CB;border-radius:2px;width:${pct}%;"></div></div>
+    <div style="font-size:18px;font-weight:500;color:#111;margin-bottom:${item.sub?'6px':'1.25rem'};line-height:1.6;">${item.q}</div>
+    ${item.sub?`<div style="font-size:14px;color:#999;margin-bottom:1.1rem;">${item.sub}</div>`:''}
+    <div id="opts">${item.opts.map(o=>`<button class="opt-btn" data-v="${o.v}">${o.t}</button>`).join('')}</div>
+  </div>`;
+}
+
+function renderS2(){
+  const item=s2queue[s2idx];
+  const pct=Math.round((s2idx+1)/s2queue.length*100);
+  return `<div style="padding-top:1rem;">
+    <div style="font-size:12px;color:#999;margin-bottom:8px;letter-spacing:0.5px;">第二部分 · 情景偏好 · ${s2idx+1} / ${s2queue.length}</div>
+    <div class="progress-track"><div style="height:4px;background:#7F77DD;border-radius:2px;width:${pct}%;"></div></div>
+    <div style="font-size:18px;font-weight:500;color:#111;margin-bottom:1.25rem;line-height:1.6;">${item.q}</div>
+    <div id="opts">${item.opts.map((o,i)=>`<button class="opt-btn" data-idx="${i}" data-d="${o.d}">${o.t}</button>`).join('')}</div>
+  </div>`;
+}
+
+function renderResult(){
+  const top=getTop(), t=RESULTS[top];
+  const dirs=t.dirs(profile), next=t.next(profile);
+  const majorLabel={stem:'理工科',biz:'商科',hum:'文科/社科',art:'艺术/设计',med:'医学/心理',law:'法学/政治'}[profile.major]||'';
+  const feelLabel={yes:'认同现有路径',meh:'感觉不够有劲',lost:'不认同但迷茫',no:'明确想换方向'}[profile.pathFeel]||'';
+  const dirTags=dirs.slice(0,8).map(j=>`<span class="dir-tag">${j}</span>`).join(' ');
+  return `<div style="padding-top:1rem;">
+    <div class="card">
+      <div style="font-size:13px;color:#999;margin-bottom:10px;">${majorLabel} · ${feelLabel}</div>
+      <div style="font-size:25px;font-weight:600;color:#111;margin-bottom:8px;">${t.name}</div>
+      <div class="badge" style="margin-bottom:1.25rem;">${t.core}</div>
+      <div style="font-size:15px;color:#555;line-height:1.85;margin-bottom:1.5rem;">${t.desc}</div>
+      <div class="info-box">
+        <div style="font-size:12px;color:#999;margin-bottom:8px;">基于你现在的状态，建议</div>
+        <div style="font-size:15px;color:#111;line-height:1.8;">${next}</div>
+      </div>
+      <div style="font-size:14px;font-weight:500;color:#555;margin-bottom:10px;">结合你的背景，值得探索的方向</div>
+      <div style="margin-bottom:1.5rem;line-height:2.2;">${dirTags}</div>
+      <div style="border-top:0.5px solid #ddd;padding-top:1rem;font-size:14px;color:#999;line-height:1.8;">
+        这些方向不是唯一答案，是值得认真看一看的起点。<br>📌 截图发小红书，看看你朋友是什么类型~
+      </div>
+    </div>
+    <button class="secondary-btn" id="restartBtn">重新测一次</button>
+  </div>`;
+}
+
+function bindEvents(){
+  const s=document.getElementById('startBtn');
+  if(s) s.onclick=()=>{phase='s1';s1idx=0;render();};
+  if(phase==='s1'){
+    document.querySelectorAll('#opts button').forEach(btn=>{
+      btn.onclick=()=>{
+        profile[STAGE1[s1idx].id]=btn.dataset.v;
+        if(s1idx<STAGE1.length-1){s1idx++;render();}
+        else{buildQueue();phase='s2';s2idx=0;render();}
+      };
+    });
+  }
+  if(phase==='s2'){
+    document.querySelectorAll('#opts button').forEach(btn=>{
+      btn.onclick=()=>{
+        addScore(btn.dataset.d);
+        if(s2idx<s2queue.length-1){s2idx++;render();}
+        else{phase='result';render();}
+      };
+    });
+  }
+  const r=document.getElementById('restartBtn');
+  if(r) r.onclick=()=>{profile={major:null,status:null,pathFeel:null};scores={I:0,S:0,A:0,E:0,R:0,C:0};s2queue=[];s2idx=0;s1idx=0;phase='cover';render();};
+}
+
+render();
+</script>
+</body>
+</html>
