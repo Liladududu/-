@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -36,8 +37,16 @@ let P = { major:null, status:null, pathFeel:null, system:null, city:null, constr
 let SC = { I:0, S:0, A:0, E:0, C:0, R:0 };
 // 体制内细分分数
 let SYS = { GOV_base:0, GOV_policy:0, INST_tech:0, INST_research:0, SOE:0 };
-// 记录几道关键题的原始答案，用于结果描述
-let KEY = { meaning_q:null, uncertainty_q:null, system_cost:null };
+// 记录关键题原始答案，用于动态生成结果描述和矛盾检测
+let KEY = {
+  meaning_q: null,       // 体制内：意义vs舒适
+  uncertainty_q: null,   // 体制外：面对不确定性
+  system_cost: null,     // 体制内：代价接受度
+  satisfy_q: null,       // 做完什么让你觉得值（S/A/E/I）
+  collab_q: null,        // 独立vs协作偏好
+  depth_q: null,         // 深度vs广度
+  stuck_q: null,         // 卡在哪里（trace第二问）
+};
 
 // trace 追问队列：第一部分结束前插入
 let traceQueue = [], traceIdx = 0, inTrace = false;
@@ -285,7 +294,18 @@ const TRACE_QUESTIONS = {
   }
 };
 
-// aspire → SC加分映射（体制外路线用）
+// trace第二问：通用，测"是什么让你没走"
+const TRACE_Q2 = {
+  q: '你知道现在的路不太对，但还在这里。是什么让你没走？',
+  sub: '这是最重要的一个问题，选最真实的那个',
+  id: 'stuck_q',
+  opts: [
+    {t: '不知道怎么入行——对目标方向没有路径感，不知道从哪里开始', v:'no_path'},
+    {t: '外部压力——父母不支持，或者经济上还不能冒险', v:'external'},
+    {t: '不确定自己真的适合——怕换了之后还是不对', v:'unsure'},
+    {t: '还没到那个阶段——刚开始想这件事，还没准备好行动', v:'not_ready'}
+  ]
+};
 const ASPIRE_SCORE = {
   people:  ()=>{ SC.S += 2; },
   create:  ()=>{ SC.A += 2; },
@@ -402,6 +422,15 @@ const S2_SYSTEM = [
       {t: '岗位很重要、参与决策，但要去偏远地区，离家远、环境差', sc: ()=>{ SYS.GOV_policy++; SYS.INST_research++; }, kv:'meaning_over_comfort'},
       {t: '岗位普通、执行为主，但在家旁边，每天准时下班', sc: ()=>{ SYS.GOV_base++; SYS.INST_tech++; }, kv:'comfort_over_meaning'}
     ]
+  },
+  {
+    // 专门区分INST_tech和INST_research
+    condition: ()=> SYS.INST_tech > 0 || SYS.INST_research > 0,
+    q: '在事业单位或高校里，你希望自己的核心价值来自哪里？',
+    opts: [
+      {t: '我是这里某件具体事情做得最好的人——专业技能让我不可替代', sc: ()=>{ SYS.INST_tech += 2; }},
+      {t: '我在这个平台上研究真正有意思的问题，并且让研究结果影响实践或政策', sc: ()=>{ SYS.INST_research += 2; }}
+    ]
   }
 ];
 
@@ -410,18 +439,20 @@ const S2_SYSTEM = [
 const S2_EXT_UNIVERSAL = [
   {
     q: '两段两年的工作经历，你更想拥有哪段？',
+    key: 'depth_q',
     opts: [
-      {t: '在一个方向上做得很深，成为某个细分领域里被认可的人，但视野相对窄', sc: ()=>{ SC.I += 2; SC.R++; }},
-      {t: '做过三四个不同类型的项目，没有特别深的专长，但什么都懂一点，适应力强', sc: ()=>{ SC.E++; SC.C++; }}
+      {t: '在一个方向上做得很深，成为某个细分领域里被认可的人，但视野相对窄', sc: ()=>{ SC.I += 2; SC.R++; }, kv:'depth'},
+      {t: '做过三四个不同类型的项目，没有特别深的专长，但什么都懂一点，适应力强', sc: ()=>{ SC.E++; SC.C++; }, kv:'breadth'}
     ]
   },
   {
     q: '做完一件事，什么情况让你真正觉得值？',
+    key: 'satisfy_q',
     opts: [
-      {t: '我自己知道这件事做得很好——哪怕没人注意到', sc: ()=>{ SC.I++; SC.R++; }},
-      {t: '有人因为这件事变好了，跟我说了句谢谢', sc: ()=>{ SC.S += 2; }},
-      {t: '这件事被很多人看见了，产生了影响', sc: ()=>{ SC.A++; SC.E++; }},
-      {t: '数字或结果超出预期，而且是我推动的', sc: ()=>{ SC.E += 2; }}
+      {t: '我自己知道这件事做得很好——哪怕没人注意到', sc: ()=>{ SC.I++; SC.R++; }, kv:'self'},
+      {t: '有人因为这件事变好了，跟我说了句谢谢', sc: ()=>{ SC.S += 2; }, kv:'help'},
+      {t: '这件事被很多人看见了，产生了影响', sc: ()=>{ SC.A++; SC.E++; }, kv:'impact'},
+      {t: '数字或结果超出预期，而且是我推动的', sc: ()=>{ SC.E += 2; }, kv:'result'}
     ]
   },
   {
@@ -449,10 +480,11 @@ const S2_EXT_UNIVERSAL = [
     ]
   },
   {
-    q: '一个同事，非常聪明，你跟他合作能学到很多，但他对你一直很冷淡，只谈工作。另一个同事，专业能力一般，但关系融洽，一起工作很舒服。你在哪种关系里更有状态？',
+    q: '一个同事非常聪明，跟他合作能学很多，但他一直很冷淡，只谈工作。另一个同事专业一般，但关系融洽，一起工作很舒服。你在哪种关系里更有状态？',
+    key: 'collab_q',
     opts: [
-      {t: '跟冷淡但聪明的那个——我更看重成长，关系是次要的', sc: ()=>{ SC.I++; SC.R++; }},
-      {t: '跟关系好但能力一般的那个——氛围不对我会持续内耗', sc: ()=>{ SC.S += 2; }}
+      {t: '跟冷淡但聪明的那个——我更看重成长，关系是次要的', sc: ()=>{ SC.I++; SC.R++; }, kv:'growth'},
+      {t: '跟关系好但能力一般的那个——氛围不对我会持续内耗', sc: ()=>{ SC.S += 2; }, kv:'warmth'}
     ]
   },
   {
@@ -701,6 +733,38 @@ function getExtResult() {
   return top;
 }
 
+// ── 矛盾检测：返回0-2条矛盾描述 ─────────────────────────
+function detectContradictions() {
+  const items = [];
+
+  // 矛盾1：独立偏好 vs 满足感来自帮助人
+  if (KEY.collab_q === 'growth' && KEY.satisfy_q === 'help') {
+    items.push('你说更喜欢和聪明的人合作、更看重成长，但你说做完一件事让你最觉得值的，是"有人因为这件事变好了"。这两件事会在你选岗位时产生真实冲突——你需要的是一个能独立深度工作、但又能直接影响到真实的人的岗位，这类岗位存在但不多，值得专门去找。');
+  }
+
+  // 矛盾2：主动型 + 迷茫 + 不确定性接受度高
+  if (P.agency === 'active' && (P.pathFeel === 'lost' || P.pathFeel === 'no') && KEY.uncertainty_q === 'excited') {
+    items.push('你是主动型，面对不确定性感到兴奋，但你还是迷茫——说明卡住你的不是能力或勇气，而是还没遇到一个你真正愿意为之投入的方向。你不缺行动力，你缺的是一个值得你行动的对象。');
+  }
+
+  // 矛盾3：想要深度 vs 满足感来自影响力/推动事情
+  if (KEY.depth_q === 'depth' && KEY.satisfy_q === 'result') {
+    items.push('你说想拥有在一个方向上做得很深的经历，但你说最让你觉得值的是"结果超出预期、而且是我推动的"。深度和推动结果不是矛盾的，但它们需要不同的岗位节奏——纯研究类满足深度但结果感弱，纯运营类结果感强但很难深耕。你的理想岗位在这两者之间。');
+  }
+
+  // 矛盾4：外部压力大 + 想优先考虑自己
+  if (P.constraint === 'high' && P.agency === 'active') {
+    items.push('你说家庭压力在你做决定时权重很大，但你又是主动型——这意味着你内心有自己的方向感，但外部约束会不断拉扯你。这个矛盾不需要"解决"，但需要你提前想清楚：当这两件事真正冲突的时候，你会怎么选？');
+  }
+
+  // 矛盾5：被动型 + aspire有强方向 + 卡在外部压力
+  if (P.agency === 'passive' && P.aspire && P.aspire !== 'unclear' && KEY.stuck_q === 'external') {
+    items.push(`你知道自己对${ASPIRE_LABEL[P.aspire] || '某个方向'}有感觉，但你说是外部压力让你没走——不是不知道，是没允许自己走。这和"迷茫"是完全不同的处境，解决方案也不同：你需要的不是探索，而是一次和家人的真实对话，或者一个能降低外部风险的过渡方案。`);
+  }
+
+  return items.slice(0, 2); // 最多显示2条，不要压垮用户
+}
+
 // ── 结果库（14种）────────────────────────────────────────
 const RESULTS = {
 
@@ -800,11 +864,10 @@ const RESULTS = {
     shadow: '你可能有时候会想：我是不是想太多了，反而迟迟不行动？在别人都有"结论"的时候，你还在"研究中"。这是你的特质，也是你的风险点——过度分析会让你错过时机。',
     notFor: '纯执行类、高重复性、需要快速产出但不需要深度的岗位会让你很痛苦，比如流水线式运营、纯客服、纯销售。',
     action: p => {
-      const agency = p.agency === 'active'
-        ? '你是主动型。建议主动找到一个你真正好奇的问题，把它变成一个研究项目或副业——哪怕很小。积累可展示的深度比更新简历更有效。'
-        : '你是被动型。你的深度思考能力很容易被忽视，因为它不显眼。建议主动把你的思考输出出来——写作、分析报告、内部分享都行——让别人看见你的价值，而不是等被发现。';
-      if (p.city === 'tier1') return agency + ' 在一线城市，数据分析师、产品经理、咨询顾问是你最能发挥的岗位，竞争激烈但上限高。';
-      return agency + ' 在非一线城市，往往更需要能独立思考、能解决复杂问题的人，但这类岗位更难找到，需要主动去寻找和创造。';
+      const step1 = `在即刻、豆瓣、LinkedIn上搜"${p.major==='stem'?'数据分析师/产品经理':p.major==='biz'?'战略咨询/行业研究':p.major==='hum'?'用户研究员/内容策略':'研究员/分析师'}工作日常"，看10个真实从业者的自述——不是招聘信息，不是知乎攻略，是真实的人说的真实的话。目的是建立一个感性的画面，感受这类工作真实长什么样。`;
+      const step2 = `找到1个在目标方向做了1-3年的人，发消息请教30分钟。不要问"怎么入行"，要问两个问题：（1）你最后悔没人早点告诉你的一件事是什么？（2）你现在做的工作里，最让你有成就感的那个瞬间是什么？`;
+      const step3 = `做完前两步后你会有一个更真实的感受。如果感受是"比我想象的更对"，下一步是找一个可以积累深度的小项目开始做；如果感受是"和我想象的不一样"，说明你需要重新校准方向，而不是继续往这里投入。`;
+      return { s1: step1, s2: step2, s3: step3 };
     },
     tension: p => p.pathFeel === 'lost' || p.pathFeel === 'no'
       ? '你想换方向，但还没找到新的落点。建议不要等"找到方向"再行动——而是通过行动来找方向。找2-3个你好奇的领域，各自用一个月时间认真接触，比看100篇测评更有用。'
@@ -827,11 +890,10 @@ const RESULTS = {
     shadow: '你可能有时候会想：我是不是太容易被别人的情绪带走，消耗太多自己？或者在工作里很难说"不"，总在帮别人做分外的事。这不是软弱，但如果不管理好，会持续消耗你。',
     notFor: '高竞争性、强调个人业绩排名、缺少协作氛围的岗位会让你很不舒服——你在那种环境里不是发挥不出来，是会内耗到精疲力竭。',
     action: p => {
-      const agency = p.agency === 'active'
-        ? '你是主动型。建议主动争取更多接触真实用户、学员、客户的机会，把你的连接力变成可量化的成果——案例、数据、反馈，都是你的资产。'
-        : '你是被动型。你的能力很容易在"等待被发现"里被浪费。建议主动创造一两次让你能展示这个能力的机会——哪怕是小范围的分享、一个公益项目，或者帮朋友解决一个真实问题并记录下来。';
-      if (p.city === 'hometown' || p.city === 'province') return agency + ' 在非一线城市，教育类（K12、培训机构、职业教育）和本地服务类岗位对你的能力有真实需求，且竞争没有一线激烈。';
-      return agency + ' 在一线城市，用户研究员、客户成功、企业培训师是你最直接的入口，且薪资上限比你想象的高。';
+      const step1 = `在小红书或即刻上搜"${p.major==='med'?'心理咨询师/社会工作者':p.major==='hum'?'教培老师/用户研究员':'HR/用户研究员'}的日常"，看10-15条真实从业者的内容，特别注意他们在说什么样的工作让他们最有成就感——看看那个感受你有没有共鸣。`;
+      const step2 = `找1-2个在教育、咨询、HR或用户研究方向工作的人聊30分钟，重点问：（1）这份工作里最消耗你的是什么？（2）你是怎么保护自己不被别人的情绪淹没的？这两个问题的答案会告诉你你真正能不能长期在这类岗位里工作。`;
+      const step3 = `如果聊完你发现"消耗感"是你能接受的，下一步是找一个能直接接触人的低成本机会——做一次志愿辅导、帮朋友做一次模拟面试、或者参与一个社区项目。真实的体验比任何分析都更有参考价值。`;
+      return { s1: step1, s2: step2, s3: step3 };
     },
     tension: p => p.constraint === 'high'
       ? '你有较大的现实压力，同时你又是一个很在意他人感受的人。这两件事加在一起，容易让你做决定时把"别人怎么看"放得太重。建议在做职业选择时，认真问自己：这个选择是我真的想要的，还是因为它让别人满意？'
@@ -981,7 +1043,13 @@ const RESULTS = {
     strength: '你愿意诚实面对自己的迷茫，而不是假装有方向。这比强行给自己贴一个标签、做出一个你不确信的决定要好得多。',
     shadow: '你可能用"还没想清楚"来合理化一种停滞状态。想清楚和开始行动不是一个先后顺序的关系——往往只有开始行动，你才能想清楚。',
     notFor: '现在最不适合你的，是一个需要你立刻做出长期承诺的决定——比如考研、出国、某个需要全力备考的路线。这些都可以等你更确定之后再选。',
-    action: () => '你现在最需要的不是一个方向，而是一次真实的尝试。建议做这件事：在接下来三个月内，找到三个你有一点点好奇的领域，每个领域找一个真实在做这件事的人聊30分钟，不是看文章，不是刷视频，而是真实的人。聊完之后写三段话记录你的感受。这比重新做十次测评更有用。',
+    action: () => {
+      return {
+        s1: '在接下来一周，把你脑子里有过的所有"如果可以"写下来——不管多不现实，不管多小。不用分析，只是列出来。这是找到真实线索的第一步。',
+        s2: '从上面的清单里挑3个你最好奇的方向，每个方向找一个真实在做这件事的人聊30分钟。不是看文章，不是刷视频，是真实的人。聊完之后写三段话：（1）这个人的日常我能接受吗？（2）他说的什么话让我有共鸣？（3）这个方向和我想象的有什么不一样？',
+        s3: '聊完三个人之后，你会发现其中有一个方向感觉更对一点——哪怕只是"没那么排斥"。那就是你的起点。不需要想清楚整条路，只需要在那个方向上找到下一步能做的最小行动。'
+      };
+    },
     tension: () => '你现在感到迷茫，这是真实的。但"迷茫"不是一个需要被解决的问题，而是一个需要被经历的过程。你不需要现在就找到答案，但你需要开始行动——哪怕很小。',
     dirs: () => ['先不用锁定方向', '找3个真实的人聊聊他们的路', '做一件一直想做但没做的事', '把你好奇过的事情列一个清单']
   }
@@ -1062,16 +1130,59 @@ function renderResult() {
   const cityLabel = {tier1:'一线城市',province:'省会/新一线',hometown:'回老家'}[P.city] || '';
   const agLabel = P.agency === 'active' ? '主动型' : '被动型';
 
-  // aspire补充说明（如果有，插入summary之前）
+  // aspire补充说明
   const aspireTip = (P.aspire && P.aspire !== 'unclear' && ASPIRE_LABEL[P.aspire] && P.pathFeel !== 'yes')
     ? `<div style="font-size:13.5px;color:#7F77DD;background:#EEEDFE;border-radius:8px;padding:8px 12px;margin-bottom:1rem;line-height:1.7;">你学${majorLabel}，但你说真正有感觉的是<strong>${ASPIRE_LABEL[P.aspire]}</strong>——这一点也在下面的结果里有所体现。</div>`
     : '';
 
+  // stuck_q 提示（卡点说明）
+  const stuckMap = {
+    no_path: '你知道自己想去的方向，但不知道怎么入行——这是信息问题，不是方向问题。下面的行动建议会告诉你具体怎么找到路径。',
+    external: '你说外部压力是让你停在原地的主要原因。这不是迷茫，是约束。在做任何职业决策之前，值得先认真评估这个约束能不能被调整，或者有没有一个能同时满足外部期待和自己感受的方案。',
+    unsure: '你不确定自己真的适合——这很正常，但"适合"这件事只能靠真实的接触来验证，而不是靠想象。下面的行动建议会给你一个低成本验证的方式。',
+    not_ready: '你说还没准备好行动，这是诚实的。但"准备好"这种感觉往往不会自己到来——它需要一个小的触发。给自己设一个两周内能完成的最小行动，而不是等整个方向想清楚了再动。'
+  };
+  const stuckTip = KEY.stuck_q && stuckMap[KEY.stuck_q]
+    ? `<div class="info-box" style="border-left:3px solid #7F77DD;">
+        <div style="font-size:12px;color:#7F77DD;margin-bottom:5px;font-weight:500;">关于你说"还没走"的原因</div>
+        <div style="font-size:14px;color:#444;line-height:1.8;">${stuckMap[KEY.stuck_q]}</div>
+      </div>`
+    : '';
+
+  // 矛盾检测
+  const contradictions = P.system !== 'want' ? detectContradictions() : [];
+  const contradictionBlock = contradictions.length > 0
+    ? `<div class="warn-box">
+        <div style="font-size:12px;color:#A07800;margin-bottom:8px;font-weight:500;">你的答案里有一个值得注意的地方</div>
+        ${contradictions.map(c => `<div style="font-size:14px;color:#5a4a00;line-height:1.8;margin-bottom:${contradictions.length>1?'10px':'0'}">${c}</div>`).join('')}
+      </div>`
+    : '';
+
   const summary = typeof t.summary === 'function' ? t.summary(P) : t.summary;
-  const action = typeof t.action === 'function' ? t.action(P) : t.action;
+  const actionRaw = typeof t.action === 'function' ? t.action(P) : t.action;
   const tension = typeof t.tension === 'function' ? t.tension(P) : t.tension;
   const dirsRaw = typeof t.dirs === 'function' ? t.dirs(P) : t.dirs;
   const dirTags = (dirsRaw || []).slice(0, 8).map(j => `<span class="dir-tag">${j}</span>`).join('');
+
+  // action三步结构：如果action是对象{s1,s2,s3}就分步渲染，否则直接渲染字符串
+  let actionHTML;
+  if (typeof actionRaw === 'object' && actionRaw.s1) {
+    actionHTML = `
+      <div style="margin-bottom:10px;">
+        <div style="font-size:12px;color:#888;margin-bottom:4px;">这周能做</div>
+        <div style="font-size:14px;color:#111;line-height:1.8;">${actionRaw.s1}</div>
+      </div>
+      <div style="border-top:0.5px solid #e8e8e8;padding-top:10px;margin-bottom:10px;">
+        <div style="font-size:12px;color:#888;margin-bottom:4px;">这个月能做</div>
+        <div style="font-size:14px;color:#111;line-height:1.8;">${actionRaw.s2}</div>
+      </div>
+      <div style="border-top:0.5px solid #e8e8e8;padding-top:10px;">
+        <div style="font-size:12px;color:#888;margin-bottom:4px;">需要你判断的</div>
+        <div style="font-size:14px;color:#111;line-height:1.8;">${actionRaw.s3}</div>
+      </div>`;
+  } else {
+    actionHTML = `<div style="font-size:14.5px;color:#111;line-height:1.85;">${actionRaw}</div>`;
+  }
 
   return `<div style="padding-top:0.5rem;">
     <div class="card">
@@ -1083,6 +1194,8 @@ function renderResult() {
       <div class="badge">你的核心竞争力</div>
       <div style="font-size:14.5px;color:#333;line-height:1.85;margin-bottom:1.2rem;">${t.strength}</div>
 
+      ${contradictionBlock}
+
       <div class="warn-box">
         <div style="font-size:12px;color:#A07800;margin-bottom:5px;font-weight:500;">你可能有时候会想……</div>
         <div style="font-size:14px;color:#5a4a00;line-height:1.8;">${t.shadow}</div>
@@ -1093,9 +1206,11 @@ function renderResult() {
         <div style="font-size:14px;color:#444;line-height:1.8;">${t.notFor}</div>
       </div>
 
+      ${stuckTip}
+
       <div class="info-box">
-        <div style="font-size:12px;color:#888;margin-bottom:5px;font-weight:500;">✦ 下一步最值得做的事</div>
-        <div style="font-size:14.5px;color:#111;line-height:1.85;">${action}</div>
+        <div style="font-size:12px;color:#888;margin-bottom:10px;font-weight:500;">✦ 下一步最值得做的事</div>
+        ${actionHTML}
       </div>
 
       <div class="tension-box">
@@ -1124,9 +1239,19 @@ function bindEvents() {
     // trace追问阶段的按钮
     document.querySelectorAll('#trace-opts button').forEach(btn => {
       btn.onclick = () => {
-        P.aspire = btn.dataset.v;
+        const curTraceItem = traceQueue[traceIdx];
+        // 判断是第几道追问
+        if (curTraceItem.id === 'stuck_q') {
+          KEY.stuck_q = btn.dataset.v;
+        } else {
+          P.aspire = btn.dataset.v;
+        }
+        traceIdx++;
+        if (traceIdx < traceQueue.length) {
+          render(); // 继续下一道追问
+          return;
+        }
         inTrace = false;
-        // trace答完，继续第一部分剩余题目
         s1idx++;
         if (s1idx < STAGE1.length) { render(); }
         else { buildQueue(); phase='s2'; s2idx=0; render(); }
@@ -1142,13 +1267,13 @@ function bindEvents() {
         // 答完pathFeel（第3题，idx=2）后，判断是否需要插入追问
         if (curItem.id === 'pathFeel' && P.pathFeel !== 'yes') {
           const traceKey = P.major + '_' + P.pathFeel;
-          if (TRACE_QUESTIONS[traceKey]) {
-            traceQueue = [TRACE_QUESTIONS[traceKey]];
-            traceIdx = 0;
-            inTrace = true;
-            render();
-            return;
-          }
+          const q1 = TRACE_QUESTIONS[traceKey];
+          // 无论有没有专业定制追问，都追问"卡在哪里"
+          traceQueue = q1 ? [q1, TRACE_Q2] : [TRACE_Q2];
+          traceIdx = 0;
+          inTrace = true;
+          render();
+          return;
         }
 
         if (s1idx < STAGE1.length - 1) { s1idx++; render(); }
@@ -1172,7 +1297,7 @@ function bindEvents() {
     P={major:null,status:null,pathFeel:null,system:null,city:null,constraint:null,agency:null,aspire:null};
     SC={I:0,S:0,A:0,E:0,C:0,R:0};
     SYS={GOV_base:0,GOV_policy:0,INST_tech:0,INST_research:0,SOE:0};
-    KEY={meaning_q:null,uncertainty_q:null,system_cost:null};
+    KEY={meaning_q:null,uncertainty_q:null,system_cost:null,satisfy_q:null,collab_q:null,depth_q:null,stuck_q:null};
     traceQueue=[];traceIdx=0;inTrace=false;
     s2queue=[];s2idx=0;s1idx=0;phase='cover';
     render();
